@@ -124,7 +124,18 @@ export default function ServiciosPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {items.map((service) => (
-                <div key={service.id} className="bg-white rounded-2xl shadow-card p-5 flex flex-col">
+                <div key={service.id} className="bg-white rounded-2xl shadow-card flex flex-col overflow-hidden">
+                  {service.image_url && (
+                    <div className="relative h-40 w-full overflow-hidden bg-petfy-grey">
+                      <img
+                        src={service.image_url}
+                        alt={service.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  <div className="p-5 flex flex-col flex-1">
                   <h3 className="font-bold text-navy text-lg mb-1">{service.name}</h3>
                   {service.description && (
                     <p className="text-sm text-petfy-grey-text mb-3 flex-1">{service.description}</p>
@@ -142,6 +153,7 @@ export default function ServiciosPage() {
                     >
                       Reservar
                     </button>
+                  </div>
                   </div>
                 </div>
               ))}
