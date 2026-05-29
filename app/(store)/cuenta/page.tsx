@@ -22,10 +22,17 @@ export default function CuentaPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/auth/login?redirect=/cuenta'); return; }
+      const res = await fetch('/api/referrals/generate');
+      if (res.ok) {
+        const data = await res.json() as { code?: string | null; uses_count?: number; discount_percent?: number };
+        if (data.code) setReferral({ code: data.code, uses_count: data.uses_count ?? 0, discount_percent: data.discount_percent ?? 10 });
+      }
       setLoading(false);
-    });
+    };
+    init();
   }, [router]);
 
   const generateCode = async () => {

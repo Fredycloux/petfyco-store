@@ -19,6 +19,36 @@ function generateCode(userId: string): string {
   return code;
 }
 
+export async function GET(req: NextRequest) {
+  const cookieStore = await cookies();
+  const supabaseAuth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
+  const { data: { session } } = await supabaseAuth.auth.getSession();
+  if (!session) {
+    return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+  }
+
+  const supabase = createAdminClient();
+  const { data: existing, error } = await supabase
+    .from('store_referrals')
+    .select('code, uses_count, discount_percent')
+    .eq('referrer_id', session.user.id)
+    .maybeSingle();
+
+  if (error && error.code !== '42P01') {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (!existing) {
+    return NextResponse.json({ code: null });
+  }
+
+  return NextResponse.json({ code: existing.code, uses_count: existing.uses_count, discount_percent: existing.discount_percent });
+}
+
 export async function POST(req: NextRequest) {
   const rl = rateLimit(`referrals:generate:${getIp(req)}`, 5, 3_600_000);
   if (!rl.allowed) {

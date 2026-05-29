@@ -230,7 +230,7 @@ export default function ProductosPage() {
             )}
             {searchParam && (
               <div className="flex items-center gap-1.5 bg-primary/10 text-primary rounded-full px-3 py-1.5 text-xs font-medium">
-                "{searchParam}"
+                &ldquo;{searchParam}&rdquo;
                 <button onClick={clearFilters}><X size={12} /></button>
               </div>
             )}
