@@ -159,24 +159,41 @@ export default function ServiciosPage() {
             <CategorySection category="grooming" items={grouped['grooming']} onSelect={setSelected} />
           )}
 
-          {/* Vet, Training, Other: las 3 categorías lado a lado */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-            {(['vet', 'training', 'other'] as const).map((cat) =>
-              grouped[cat] ? (
-                <div key={cat}>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-primary">{CATEGORY_ICONS[cat]}</span>
-                    <h2 className="text-xl font-bold text-navy">{CATEGORY_LABELS[cat] ?? cat}</h2>
+          {/* Veterinaria: sus 3 servicios en fila de 3 columnas */}
+          {grouped['vet'] && (
+            <div className="mb-10">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-primary">{CATEGORY_ICONS['vet']}</span>
+                <h2 className="text-xl font-bold text-navy">{CATEGORY_LABELS['vet']}</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {grouped['vet'].map((s) => (
+                  <ServiceCard key={s.id} service={s} onSelect={setSelected} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Adiestramiento y Otros: lado a lado en 2 columnas */}
+          {(grouped['training'] || grouped['other']) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+              {(['training', 'other'] as const).map((cat) =>
+                grouped[cat] ? (
+                  <div key={cat}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-primary">{CATEGORY_ICONS[cat]}</span>
+                      <h2 className="text-xl font-bold text-navy">{CATEGORY_LABELS[cat] ?? cat}</h2>
+                    </div>
+                    <div className="flex flex-col gap-4">
+                      {grouped[cat].map((s) => (
+                        <ServiceCard key={s.id} service={s} onSelect={setSelected} />
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-4">
-                    {grouped[cat].map((service) => (
-                      <ServiceCard key={service.id} service={service} onSelect={setSelected} />
-                    ))}
-                  </div>
-                </div>
-              ) : null
-            )}
-          </div>
+                ) : null
+              )}
+            </div>
+          )}
         </>
       )}
 
