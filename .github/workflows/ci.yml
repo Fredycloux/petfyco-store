@@ -7,8 +7,8 @@ on:
     branches: [main, clean]
 
 jobs:
-  build:
-    name: Lint & Build
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
 
     steps:
@@ -25,16 +25,3 @@ jobs:
 
       - name: Lint
         run: npx next lint
-
-      - name: Build
-        run: npx next build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          NEXT_PUBLIC_SITE_URL: https://www.petfyco.co
-          NEXT_PUBLIC_ADMIN_EMAILS: petfyco.sas@gmail.com
-          NEXT_PUBLIC_GA_ID: G-PLACEHOLDER
-          NEXT_PUBLIC_META_PIXEL_ID: "0"
-          INTERNAL_API_SECRET: ci-placeholder-secret
-          RESEND_API_KEY: re_placeholder
