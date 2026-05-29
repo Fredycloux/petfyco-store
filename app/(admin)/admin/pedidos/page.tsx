@@ -32,6 +32,7 @@ export default function PedidosAdminPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [ratings, setRatings] = useState<Record<string, number>>({});
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -55,6 +56,20 @@ export default function PedidosAdminPage() {
 
     const { data } = await query;
     setOrders(data || []);
+
+    // Cargar calificaciones (best-effort — tabla puede no existir aún)
+    if (data && data.length > 0) {
+      const { data: ratingData, error: rErr } = await supabase
+        .from('store_order_ratings')
+        .select('order_id, rating')
+        .in('order_id', data.map((o) => o.id));
+      if (!rErr && ratingData) {
+        const map: Record<string, number> = {};
+        for (const r of ratingData) map[r.order_id] = r.rating;
+        setRatings(map);
+      }
+    }
+
     setLoading(false);
   }, [search, statusFilter, dateFrom, dateTo]);
 
@@ -158,6 +173,7 @@ export default function PedidosAdminPage() {
                 <th className="text-left px-5 py-3 text-xs font-semibold text-petfy-grey-text uppercase tracking-wider">Estado</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-petfy-grey-text uppercase tracking-wider">Pago</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-petfy-grey-text uppercase tracking-wider">Fecha</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-petfy-grey-text uppercase tracking-wider">Calif.</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-petfy-grey-text uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
@@ -165,13 +181,13 @@ export default function PedidosAdminPage() {
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: 7 }).map((_, j) => (
+                    {Array.from({ length: 8 }).map((_, j) => (
                       <td key={j} className="px-5 py-4"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
                     ))}
                   </tr>
                 ))
               ) : orders.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-16 text-petfy-grey-text">No se encontraron pedidos</td></tr>
+                <tr><td colSpan={8} className="text-center py-16 text-petfy-grey-text">No se encontraron pedidos</td></tr>
               ) : (
                 orders.map((order) => (
                   <tr
@@ -195,6 +211,11 @@ export default function PedidosAdminPage() {
                     </td>
                     <td className="px-5 py-4 text-petfy-grey-text text-xs">
                       {new Date(order.created_at).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </td>
+                    <td className="px-5 py-4 text-sm">
+                      {ratings[order.id]
+                        ? '★'.repeat(ratings[order.id]) + '☆'.repeat(5 - ratings[order.id])
+                        : <span className="text-petfy-grey-text">—</span>}
                     </td>
                     <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
                       <div className="relative">

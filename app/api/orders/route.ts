@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
     delivery_city,
     delivery_depto,
     coupon_code,
+    referral_code,
   } = body as {
     items: { product_id: string; quantity: number }[];
     billing: {
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
     delivery_city?: string;
     delivery_depto?: string;
     coupon_code?: string | null;
+    referral_code?: string | null;
   };
 
   // Obtener user_id verificado server-side (B1 fix — no confiar en el cliente)
@@ -168,11 +170,30 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Validar referido server-side (adicional al cupón, best-effort)
+  let referralExtraDiscount = 0;
+  let appliedReferralId: string | null = null;
+  if (referral_code && typeof referral_code === 'string') {
+    const { data: referral, error: refError } = await supabase
+      .from('store_referrals')
+      .select('id, discount_percent, uses_count, max_uses, is_active')
+      .eq('code', referral_code.toUpperCase().trim())
+      .eq('is_active', true)
+      .maybeSingle();
+    if (!refError || refError.code !== '42P01') {
+      if (referral && (referral.max_uses === null || referral.uses_count < referral.max_uses)) {
+        referralExtraDiscount = Math.floor((subtotal * referral.discount_percent) / 100);
+        appliedReferralId = referral.id;
+      }
+    }
+  }
+  const totalDiscount = Math.min(discount + referralExtraDiscount, subtotal);
+
   // Calcular envío server-side (sobre el subtotal con descuento aplicado)
   const deliveryCity  = delivery_same ? billing.billing_city  : (delivery_city  ?? '');
   const deliveryDepto = delivery_same ? billing.billing_depto : (delivery_depto ?? '');
-  const shipping = calcShipping(subtotal - discount, deliveryCity, deliveryDepto);
-  const total    = subtotal - discount + shipping;
+  const shipping = calcShipping(subtotal - totalDiscount, deliveryCity, deliveryDepto);
+  const total    = subtotal - totalDiscount + shipping;
 
   // Crear orden
   const orderNumber = 'PFC-' + Date.now().toString().slice(-8);
@@ -184,7 +205,7 @@ export async function POST(req: NextRequest) {
       user_id:            serverUserId,
       status:             'pending',
       subtotal,
-      discount,
+      discount:           totalDiscount,
       shipping,
       total,
       billing_name:       billing.billing_name,
@@ -247,6 +268,23 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Incrementar uses_count del referido (best-effort — read + write atómico suficiente al volumen actual)
+  if (appliedReferralId) {
+    const { data: ref } = await supabase
+      .from('store_referrals')
+      .select('uses_count')
+      .eq('id', appliedReferralId)
+      .single();
+    if (ref) {
+      supabase
+        .from('store_referrals')
+        .update({ uses_count: ref.uses_count + 1 })
+        .eq('id', appliedReferralId)
+        .then(() => {})
+        .catch(() => {});
+    }
+  }
+
   // Para transferencia: enviar email de confirmación server-side (tiene acceso al secret)
   if (payment_method === 'transferencia') {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://petfyco-store.vercel.app';
@@ -270,7 +308,7 @@ export async function POST(req: NextRequest) {
           subtotal:     i.subtotal,
         })),
         subtotal,
-        discount,
+        discount: totalDiscount,
         coupon_code: appliedCouponCode,
         shipping,
         total,

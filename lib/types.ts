@@ -105,3 +105,48 @@ export interface InventoryLog {
   created_at: string;
   product?: Product;
 }
+
+export interface PetService {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  duration_minutes?: number;
+  category: string;
+  is_active: boolean;
+  image_url?: string;
+  created_at: string;
+}
+
+export interface PetServiceBooking {
+  id: string;
+  service_id: string;
+  user_id: string;
+  pet_name?: string;
+  scheduled_at: string;
+  address: string;
+  notes?: string;
+  status: string;
+  created_at: string;
+  service?: Pick<PetService, 'name' | 'category' | 'price'>;
+}
+
+export interface Referral {
+  id: string;
+  referrer_id: string;
+  code: string;
+  discount_percent: number;
+  uses_count: number;
+  max_uses?: number | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface OrderRating {
+  id: string;
+  order_id: string;
+  user_id: string;
+  rating: number;
+  comment?: string;
+  created_at: string;
+}

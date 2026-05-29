@@ -68,6 +68,10 @@ export default function CheckoutPage() {
   const [billingData, setBillingData] = useState<BillingData | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [stockErrors, setStockErrors] = useState<string[]>([]);
+  const [referralCode, setReferralCode] = useState('');
+  const [referralDiscount, setReferralDiscount] = useState(0);
+  const [referralApplied, setReferralApplied] = useState(false);
+  const [referralChecking, setReferralChecking] = useState(false);
 
   // Revalidar stock del carrito contra la BD al montar el checkout
   useEffect(() => {
@@ -95,7 +99,31 @@ export default function CheckoutPage() {
 
   const cartTotal = total();
   const couponDiscount = coupon?.discount_amount ?? 0;
-  const isFreeShipping = (cartTotal - couponDiscount) >= FREE_SHIPPING_THRESHOLD;
+  const isFreeShipping = (cartTotal - couponDiscount - referralDiscount) >= FREE_SHIPPING_THRESHOLD;
+
+  const applyReferral = async () => {
+    const code = referralCode.trim().toUpperCase();
+    if (!code) return;
+    setReferralChecking(true);
+    try {
+      const res = await fetch(`/api/referrals/${code}`);
+      const data = await res.json() as { valid?: boolean; discount_percent?: number; error?: string };
+      if (res.ok && data.valid && data.discount_percent) {
+        const amt = Math.floor((cartTotal * data.discount_percent) / 100);
+        setReferralDiscount(amt);
+        setReferralApplied(true);
+        toast.success(`Código de referido aplicado: ${data.discount_percent}% de descuento`);
+      } else {
+        toast.error(data.error ?? 'Código de referido inválido');
+        setReferralDiscount(0);
+        setReferralApplied(false);
+      }
+    } catch {
+      toast.error('Error al validar el código');
+    } finally {
+      setReferralChecking(false);
+    }
+  };
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<BillingData>({
     resolver: zodResolver(billingSchema),
@@ -135,7 +163,7 @@ export default function CheckoutPage() {
   const { text: covText, sub: covSub, color: covColor, Icon: CovIcon } = COVERAGE_LABELS[coverageStatus];
 
   const shipping = isFreeShipping ? 0 : SHIPPING_BY_ZONE[coverageStatus];
-  const orderTotal = cartTotal - couponDiscount + shipping;
+  const orderTotal = cartTotal - couponDiscount - referralDiscount + shipping;
 
   const onBillingSubmit = (data: BillingData) => {
     setBillingData(data);
@@ -175,6 +203,7 @@ export default function CheckoutPage() {
           delivery_city:   billingData.delivery_city,
           delivery_depto:  billingData.delivery_depto,
           coupon_code:     coupon?.code ?? null,
+          referral_code:   referralApplied ? referralCode.trim().toUpperCase() : null,
         }),
       });
 
@@ -602,6 +631,12 @@ export default function CheckoutPage() {
                   <span className="font-medium text-green-600">-{formatCOP(couponDiscount)}</span>
                 </div>
               )}
+              {referralDiscount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-green-600">Referido {referralCode.toUpperCase()}</span>
+                  <span className="font-medium text-green-600">-{formatCOP(referralDiscount)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-petfy-grey-text">Envío</span>
                 <span className={`font-medium ${shipping === 0 ? 'text-green-600' : ''}`}>
@@ -612,6 +647,29 @@ export default function CheckoutPage() {
                 <span>Total</span>
                 <span className="text-primary">{formatCOP(orderTotal)}</span>
               </div>
+              {!referralApplied && (
+                <div className="pt-2">
+                  <p className="text-xs text-petfy-grey-text mb-1.5">¿Tienes un código de referido?</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={referralCode}
+                      onChange={(e) => { setReferralCode(e.target.value.toUpperCase()); setReferralApplied(false); setReferralDiscount(0); }}
+                      placeholder="CÓDIGO"
+                      className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary uppercase"
+                      maxLength={12}
+                    />
+                    <button
+                      type="button"
+                      onClick={applyReferral}
+                      disabled={referralChecking || !referralCode.trim()}
+                      className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg disabled:opacity-50"
+                    >
+                      {referralChecking ? '...' : 'Aplicar'}
+                    </button>
+                  </div>
+                </div>
+              )}
               <p className="text-xs text-petfy-grey-text mt-2">Precios incluyen IVA</p>
             </div>
           </div>

@@ -86,6 +86,9 @@ export default function Navbar() {
               <Link href="/productos" className="text-navy font-semibold hover:text-primary transition-colors text-sm">
                 Productos
               </Link>
+              <Link href="/servicios" className="text-navy font-semibold hover:text-primary transition-colors text-sm">
+                Servicios
+              </Link>
               <Link href="/#nosotros" className="text-navy font-semibold hover:text-primary transition-colors text-sm">
                 Nosotros
               </Link>
@@ -195,6 +198,7 @@ export default function Navbar() {
             {[
               { href: '/', label: 'Inicio' },
               { href: '/productos', label: 'Productos' },
+              { href: '/servicios', label: 'Servicios' },
               { href: '/#nosotros', label: 'Nosotros' },
               { href: '/contacto', label: 'Contacto' },
             ].map(({ href, label }) => (

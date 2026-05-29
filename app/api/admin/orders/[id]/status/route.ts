@@ -38,7 +38,7 @@ export async function PATCH(
   // Obtener estado actual antes de modificar (para auditoría)
   const { data: currentOrder, error: fetchError } = await supabase
     .from('store_orders')
-    .select('status')
+    .select('status, user_id')
     .eq('id', id)
     .single();
 
@@ -60,5 +60,25 @@ export async function PATCH(
     .eq('id', id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  // Notificar al usuario vía push (best-effort — no falla el update si falla la notificación)
+  const NOTIF_MESSAGES: Partial<Record<OrderStatus, string>> = {
+    confirmed: '¡Tu pedido fue confirmado!',
+    shipped: 'Tu pedido está en camino 🚚',
+    delivered: '¡Tu pedido fue entregado! ¿Cómo fue tu experiencia?',
+  };
+  const message = NOTIF_MESSAGES[body.status];
+  if (message && currentOrder.user_id) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://petfyco-store.vercel.app';
+    fetch(`${siteUrl}/api/notifications/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-secret': process.env.INTERNAL_API_SECRET ?? '',
+      },
+      body: JSON.stringify({ user_id: currentOrder.user_id, message }),
+    }).catch(() => {});
+  }
+
   return NextResponse.json({ ok: true });
 }
