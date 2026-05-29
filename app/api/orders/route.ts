@@ -276,12 +276,10 @@ export async function POST(req: NextRequest) {
       .eq('id', appliedReferralId)
       .single();
     if (ref) {
-      supabase
+      void supabase
         .from('store_referrals')
         .update({ uses_count: ref.uses_count + 1 })
-        .eq('id', appliedReferralId)
-        .then(() => {})
-        .catch(() => {});
+        .eq('id', appliedReferralId);
     }
   }
 
