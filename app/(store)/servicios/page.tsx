@@ -122,13 +122,13 @@ export default function ServiciosPage() {
               <span className="text-primary">{CATEGORY_ICONS[category]}</span>
               <h2 className="text-xl font-bold text-navy">{CATEGORY_LABELS[category] ?? category}</h2>
             </div>
-            <div className={`grid gap-5 grid-cols-1 ${
-              items.length === 1 ? '' :
-              items.length === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' :
-              'sm:grid-cols-2 lg:grid-cols-3'
+            <div className={`grid gap-5 ${
+              items.length === 1 ? 'grid-cols-1 sm:grid-cols-3' :
+              items.length === 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' :
+              'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
             }`}>
-              {items.map((service) => (
-                <div key={service.id} className="bg-white rounded-2xl shadow-card flex flex-col overflow-hidden">
+              {items.map((service, idx) => (
+                <div key={service.id} className={`bg-white rounded-2xl shadow-card flex flex-col overflow-hidden${items.length === 1 && idx === 0 ? ' sm:col-start-2' : ''}`}>
                   {service.image_url && (
                     <div className="relative h-40 w-full overflow-hidden bg-petfy-grey">
                       <img
