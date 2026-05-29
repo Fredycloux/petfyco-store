@@ -131,7 +131,7 @@ export default function ServiciosPage() {
                         src={service.image_url}
                         alt={service.name}
                         className="w-full h-full object-cover"
-                        loading="lazy"
+                        loading="eager"
                       />
                     </div>
                   )}
