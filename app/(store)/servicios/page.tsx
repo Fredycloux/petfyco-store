@@ -87,6 +87,43 @@ export default function ServiciosPage() {
     return acc;
   }, {});
 
+  function ServiceCard({ service, onSelect }: { service: PetService; onSelect: (s: PetService) => void }) {
+    return (
+      <div className="bg-white rounded-2xl shadow-card flex flex-col overflow-hidden">
+        {service.image_url && (
+          <div className="relative h-40 w-full overflow-hidden bg-petfy-grey">
+            <img src={service.image_url} alt={service.name} className="w-full h-full object-cover" loading="eager" />
+          </div>
+        )}
+        <div className="p-5 flex flex-col flex-1">
+          <h3 className="font-bold text-navy text-lg mb-1">{service.name}</h3>
+          {service.description && <p className="text-sm text-petfy-grey-text mb-3 flex-1">{service.description}</p>}
+          <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
+            <div>
+              <p className="text-primary font-bold text-lg">{formatCOP(service.price)}</p>
+              {service.duration_minutes && <p className="text-xs text-petfy-grey-text">{service.duration_minutes} min</p>}
+            </div>
+            <button onClick={() => onSelect(service)} className="btn-primary text-sm px-4 py-2">Reservar</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function CategorySection({ category, items, onSelect }: { category: string; items: PetService[]; onSelect: (s: PetService) => void }) {
+    return (
+      <div className="mb-10">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-primary">{CATEGORY_ICONS[category]}</span>
+          <h2 className="text-xl font-bold text-navy">{CATEGORY_LABELS[category] ?? category}</h2>
+        </div>
+        <div className={`grid gap-5 ${items.length === 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
+          {items.map((s) => <ServiceCard key={s.id} service={s} onSelect={onSelect} />)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
@@ -116,53 +153,31 @@ export default function ServiciosPage() {
           <p className="text-petfy-grey-text">Estamos preparando nuestros servicios a domicilio. ¡Vuelve pronto!</p>
         </div>
       ) : (
-        Object.entries(grouped).map(([category, items]) => (
-          <div key={category} className="mb-10">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-primary">{CATEGORY_ICONS[category]}</span>
-              <h2 className="text-xl font-bold text-navy">{CATEGORY_LABELS[category] ?? category}</h2>
-            </div>
-            <div className={`grid gap-5 ${
-              items.length === 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' :
-              'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-            }`}>
-              {items.map((service) => (
-                <div key={service.id} className="bg-white rounded-2xl shadow-card flex flex-col overflow-hidden">
-                  {service.image_url && (
-                    <div className="relative h-40 w-full overflow-hidden bg-petfy-grey">
-                      <img
-                        src={service.image_url}
-                        alt={service.name}
-                        className="w-full h-full object-cover"
-                        loading="eager"
-                      />
-                    </div>
-                  )}
-                  <div className="p-5 flex flex-col flex-1">
-                  <h3 className="font-bold text-navy text-lg mb-1">{service.name}</h3>
-                  {service.description && (
-                    <p className="text-sm text-petfy-grey-text mb-3 flex-1">{service.description}</p>
-                  )}
-                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
-                    <div>
-                      <p className="text-primary font-bold text-lg">{formatCOP(service.price)}</p>
-                      {service.duration_minutes && (
-                        <p className="text-xs text-petfy-grey-text">{service.duration_minutes} min</p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => setSelected(service)}
-                      className="btn-primary text-sm px-4 py-2"
-                    >
-                      Reservar
-                    </button>
+        <>
+          {/* Grooming: fila completa de 4 columnas */}
+          {grouped['grooming'] && (
+            <CategorySection category="grooming" items={grouped['grooming']} onSelect={setSelected} />
+          )}
+
+          {/* Vet, Training, Other: las 3 categorías lado a lado */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+            {(['vet', 'training', 'other'] as const).map((cat) =>
+              grouped[cat] ? (
+                <div key={cat}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-primary">{CATEGORY_ICONS[cat]}</span>
+                    <h2 className="text-xl font-bold text-navy">{CATEGORY_LABELS[cat] ?? cat}</h2>
                   </div>
+                  <div className="flex flex-col gap-4">
+                    {grouped[cat].map((service) => (
+                      <ServiceCard key={service.id} service={service} onSelect={setSelected} />
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
+              ) : null
+            )}
           </div>
-        ))
+        </>
       )}
 
       {/* Booking Modal */}
