@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Demasiadas solicitudes. Intenta en un momento.' },
-      { status: 429 }
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.resetInMs / 1000)) } }
     );
   }
 

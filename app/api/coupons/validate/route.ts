@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
+import { rateLimit, getIp } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(`coupons:${getIp(req)}`, 20, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { valid: false, error: 'Demasiadas solicitudes. Intenta más tarde.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.resetInMs / 1000)) } }
+    );
+  }
+
   let body: { code?: unknown; subtotal?: unknown };
   try {
     body = await req.json();
