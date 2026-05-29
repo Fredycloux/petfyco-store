@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 import { createAdminClient } from '@/lib/supabase';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   const admin = await verifyAdmin();
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+  const rl = rateLimit(`admin:products:${admin}`, 100, 3_600_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Demasiadas operaciones. Intenta en un momento.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.resetInMs / 1000)) } }
+    );
+  }
 
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch {
@@ -25,6 +34,14 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const admin = await verifyAdmin();
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+  const rl = rateLimit(`admin:products:${admin}`, 100, 3_600_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Demasiadas operaciones. Intenta en un momento.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.resetInMs / 1000)) } }
+    );
+  }
 
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch {

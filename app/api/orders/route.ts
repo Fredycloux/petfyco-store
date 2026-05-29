@@ -220,9 +220,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to create order items' }, { status: 500 });
   }
 
-  // Incrementar uses_count del cupón — atómico via RPC (best-effort)
+  // Descontar stock de forma atómica — previene overselling con requests concurrentes
+  for (const item of orderItems) {
+    const { data: decremented } = await supabase.rpc('decrement_stock', {
+      p_product_id: item.product_id,
+      p_quantity: item.quantity,
+    });
+    if (!decremented) {
+      await supabase
+        .from('store_orders')
+        .update({ status: 'stock_error' })
+        .eq('id', order.id);
+      return NextResponse.json(
+        { error: 'Stock insuficiente para uno o más productos' },
+        { status: 409 }
+      );
+    }
+  }
+
+  // Incrementar uses_count del cupón — atómico via RPC (best-effort, no falla la orden)
   if (appliedCouponId) {
-    supabase.rpc('increment_coupon_uses', { p_coupon_id: appliedCouponId }).then(() => {});
+    try {
+      await supabase.rpc('increment_coupon_uses', { p_coupon_id: appliedCouponId });
+    } catch (err) {
+      console.error('[orders] increment_coupon_uses failed:', err);
+    }
   }
 
   // Para transferencia: enviar email de confirmación server-side (tiene acceso al secret)
