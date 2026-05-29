@@ -12,12 +12,12 @@ import toast from 'react-hot-toast';
 
 type Tab = 'descripcion' | 'especificaciones';
 
-export default function ProductoPageClient() {
+export default function ProductoPageClient({ initialProduct }: { initialProduct?: Product | null }) {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState<Product | null>(initialProduct ?? null);
   const [related, setRelated] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialProduct == null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [tab, setTab] = useState<Tab>('descripcion');
@@ -25,36 +25,47 @@ export default function ProductoPageClient() {
 
   useEffect(() => {
     const load = async () => {
-      setLoading(true);
-      const { data } = await supabase
-        .from('store_products')
-        .select('*, category:store_categories(*)')
-        .eq('slug', slug)
-        .eq('active', true)
-        .single();
+      try {
+        let current = initialProduct ?? null;
 
-      if (!data) {
-        router.push('/productos');
-        return;
-      }
-      setProduct(data);
-      setSelectedImage(0);
-      setQuantity(1);
+        if (!current) {
+          setLoading(true);
+          const { data } = await supabase
+            .from('store_products')
+            .select('*, category:store_categories(*)')
+            .eq('slug', slug)
+            .eq('active', true)
+            .single();
 
-      if (data.category_id) {
-        const { data: rel } = await supabase
-          .from('store_products')
-          .select('*, category:store_categories(*)')
-          .eq('active', true)
-          .eq('category_id', data.category_id)
-          .neq('id', data.id)
-          .limit(4);
-        setRelated(rel || []);
+          if (!data) {
+            router.push('/productos');
+            return;
+          }
+          current = data;
+          setProduct(data);
+          setSelectedImage(0);
+          setQuantity(1);
+        }
+
+        if (current?.category_id) {
+          const { data: rel } = await supabase
+            .from('store_products')
+            .select('*, category:store_categories(*)')
+            .eq('active', true)
+            .eq('category_id', current.category_id)
+            .neq('id', current.id)
+            .limit(4);
+          setRelated(rel || []);
+        }
+      } catch (err) {
+        console.error('[ProductoPage] load error:', err);
+        if (!initialProduct) router.push('/productos');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     load();
-  }, [slug, router]);
+  }, [slug, router, initialProduct]);
 
   const handleAddToCart = () => {
     if (!product) return;

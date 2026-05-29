@@ -39,6 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function ProductoPage() {
-  return <ProductoPageClient />;
+export default async function ProductoPage({ params }: Props) {
+  const supabase = createClient();
+  const { data: product } = await supabase
+    .from('store_products')
+    .select('*, category:store_categories(*)')
+    .eq('slug', params.slug)
+    .eq('active', true)
+    .single();
+  return <ProductoPageClient initialProduct={product} />;
 }

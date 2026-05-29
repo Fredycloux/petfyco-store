@@ -30,7 +30,7 @@ const nextConfig = {
               "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net",
               "style-src 'self' 'unsafe-inline'",
               // Imágenes: Supabase + Unsplash + GA + Meta Pixel
-              "img-src 'self' data: blob: https://zziupfzzbcnskhmgotxs.supabase.co https://images.unsplash.com https://www.google-analytics.com https://www.facebook.com",
+              "img-src 'self' data: blob: https://zziupfzzbcnskhmgotxs.supabase.co https://images.unsplash.com https://www.google-analytics.com https://www.facebook.com https://connect.facebook.net",
               "font-src 'self'",
               // Fetch/XHR: Supabase + Google Analytics + Meta Pixel
               "connect-src 'self' https://zziupfzzbcnskhmgotxs.supabase.co wss://zziupfzzbcnskhmgotxs.supabase.co https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.facebook.com https://connect.facebook.net",
