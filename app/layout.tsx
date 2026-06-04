@@ -10,11 +10,15 @@ const inter = Inter({
   display: 'swap',
 });
 
+const CANONICAL_ORIGIN = 'https://www.petfyco.co';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(CANONICAL_ORIGIN),
   title: 'PetfyCo Tienda | Nutrición y Limpieza para Mascotas',
   description:
     'PetfyCo es la tienda en línea especializada en productos premium para mascotas. Nutrición, higiene, accesorios y más con domicilio en Medellín y su área metropolitana.',
   keywords: 'mascotas, perros, gatos, nutrición, higiene, accesorios, Medellín, domicilio, tienda online',
+  alternates: { canonical: CANONICAL_ORIGIN },
   icons: { icon: '/favicon.png', apple: '/favicon.png' },
   verification: { google: 'g9rcM0IAHrAp9lNg6fd-W2Z7EtEcK0OVVc_Khkeo8GA' },
   openGraph: {
@@ -22,11 +26,13 @@ export const metadata: Metadata = {
     description: 'Productos premium para tus mascotas con domicilio en Medellín y su área metropolitana.',
     type: 'website',
     locale: 'es_CO',
+    url: CANONICAL_ORIGIN,
+    siteName: 'PetfyCo',
     images: [{ url: '/logo.png', width: 400, height: 160, alt: 'PetfyCo' }],
   },
 };
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://petfyco-store.vercel.app';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? CANONICAL_ORIGIN;
 
 const jsonLd = {
   '@context': 'https://schema.org',
